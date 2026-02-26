@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Список товаров</title>
+    <style>
+        body { font-family: 'Times New Roman'; background-color: white; }
+        .user-info { float: right; margin: 10px; }
+        .filters { margin: 20px 0; padding: 10px; background-color: #f0f0f0; }
+        .filters form { display: inline-block; margin-right: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #7FFF00; cursor: pointer; }
+        tr.out-of-stock { background-color: lightblue; }
+        tr.sale { background-color: #2E8B57; color: white; }
+        .old-price { text-decoration: line-through; color: red; }
+        .new-price { color: black; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="user-info">
+        {% if request.user.is_authenticated %}
+            {{ request.user.full_name }} ({{ request.user.role }})
+            <a href="{% url 'logout' %}">Выйти</a>
+        {% else %}
+            Гость
+        {% endif %}
+    </div>
+
+    <h1>Список товаров</h1>
+
+    <!-- Блок фильтрации и сортировки (доступен менеджеру и админу) -->
+    {% if request.user.is_authenticated %}
+        {% if request.user.role == 'Менеджер' or request.user.role == 'Администратор' %}
+        <div class="filters">
+            <form method="get">
+                <label>Поиск:</label>
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Название, описание...">
+
+                <label>Поставщик:</label>
+                <select name="supplier">
+                    <option value="">Все поставщики</option>
+                    {% for supplier in all_suppliers %}
+                        <option value="{{ supplier }}" {% if supplier_filter == supplier %}selected{% endif %}>{{ supplier }}</option>
+                    {% endfor %}
+                </select>
+
+                <label>Сортировка по количеству:</label>
+                <select name="sort">
+                    <option value="">---</option>
+                    <option value="quantity_asc" {% if sort_by == 'quantity_asc' %}selected{% endif %}>По возрастанию</option>
+                    <option value="quantity_desc" {% if sort_by == 'quantity_desc' %}selected{% endif %}>По убыванию</option>
+                </select>
+
+                <button type="submit">Применить</button>
+            </form>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    <!-- Кнопка добавления товара (только для админа) -->
+    {% if request.user.is_authenticated and request.user.role == 'Администратор' %}
+        <a href="{% url 'product_add' %}" style="margin-bottom: 10px; display: inline-block;">➕ Добавить товар</a>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Фото</th>
+                <th>Артикул</th>
+                <th>Наименование</th>
+                <th>Категория</th>
+                <th>Описание</th>
+                <th>Производитель</th>
+                <th>Поставщик</th>
+                <th>Цена</th>
+                <th>Ед. изм.</th>
+                <th>Кол-во</th>
+                <th>Скидка %</th>
+                {% if request.user.is_authenticated and request.user.role == 'Администратор' %}
+                    <th>Действия</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr class="{% if product.quantity == 0 %}out-of-stock{% elif product.discount > 15 %}sale{% endif %}">
+                <td>
+                    {% if product.image %}
+                        <img src="{{ MEDIA_URL }}{{ product.image }}" width="50">
+                    {% else %}
+                        <img src="https://via.placeholder.com/50" alt="нет фото">
+                    {% endif %}
+                </td>
+                <td>{{ product.article }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category }}</td>
+                <td>{{ product.description|truncatechars:50 }}</td>
+                <td>{{ product.brand }}</td>
+                <td>{{ product.supplier }}</td>
+                <td>
+                    {% if product.discount %}
+                        <span class="old-price">{{ product.price }}</span>
+                        <span class="new-price">{{ product.discounted_price }}</span>
+                    {% else %}
+                        {{ product.price }}
+                    {% endif %}
+                </td>
+                <td>{{ product.unit }}</td>
+                <td>{{ product.quantity }}</td>
+                <td>{{ product.discount }}</td>
+                {% if request.user.is_authenticated and request.user.role == 'Администратор' %}
+                <td>
+                    <a href="{% url 'product_edit' product.id %}">✏️</a>
+                    <a href="{% url 'product_delete' product.id %}" onclick="return confirm('Удалить товар?')">🗑️</a>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

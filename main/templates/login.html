@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Вход</title>
+    <style>
+        body { font-family: 'Times New Roman'; background-color: white; }
+        .container { width: 300px; margin: 100px auto; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+        button { padding: 10px; width: 100%; background-color: #7FFF00; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Вход в систему</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <p class="error">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <label>Логин:</label>
+            <input type="text" name="username" required>
+            <label>Пароль:</label>
+            <input type="password" name="password" required>
+            <button type="submit">Войти</button>
+        </form>
+        <p><a href="{% url 'product_list' %}?guest=1">Войти как гость</a></p>
+    </div>
+</body>
+</html>
